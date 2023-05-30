@@ -1,0 +1,5 @@
+FROM docker.io/istio/proxyv2:1.16.1
+
+EXPOSE 443
+EXPOSE 15014
+EXPOSE 15090

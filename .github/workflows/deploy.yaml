@@ -1,0 +1,50 @@
+name: Deploy Istio
+
+# on:
+#   push:
+#     branches:
+#       - master
+
+jobs:
+  Deploy-Dev-AKS:
+    runs-on: [self-hosted, exemplo_k8s_agent_dev]
+    environment: dev
+
+    env:
+      SERVER: dev
+      NAMESPACE: istio-system
+      NAME_AKS: exemplo
+      RG_AKS: exemplo_rg
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.0.0
+      
+      - name: Split the owner and name of a repository
+        id: owner-name-repo
+        uses: owner/github-split-repo-owner-name-action@v1.0.0
+
+      - name: Azure Login
+        uses: Azure/login@v1.4.5
+        with:
+          creds: ${{ secrets.ABD1SPGHWF001 }}
+
+      - name: login aks
+        run: az aks get-credentials --resource-group ${{ env.RG_AKS }}  --name ${{ env.NAME_AKS }}  --admin
+
+      # - name: ls release and Uninstall
+      #   run: |
+      #     helm ls -n istio-system
+      #     helm uninstall addons -n ${{ env.NAMESPACE }}    
+#          helm uninstall istio-base -n ${{ env.NAMESPACE }} 
+#          helm uninstall istiod -n ${{ env.NAMESPACE }} 
+           
+      - name: Deploy helm to AKS
+        run: |
+          helm upgrade --install addons ./addons/k8s -n ${{ env.NAMESPACE }} -f ./addons/k8s/values.yaml
+          helm upgrade --install istio-base ./tool-istio-base/k8s  -n ${{ env.NAMESPACE }} -f ./tool-istio-base/k8s/values.yaml
+          helm upgrade --install istiod ./tool-istio/k8s -n ${{ env.NAMESPACE }} -f ./tool-istio/k8s/values.yaml
+          
+
+      - name: ls release
+        run: helm ls -n istio-system  
